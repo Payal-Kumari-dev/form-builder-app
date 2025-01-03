@@ -2,72 +2,77 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import useAuth from '../hooks/useAuth';
 import { userDashboardApi } from "../apis/User";
-import { createWorkspaceApi, fetchWorkspacesApi, deleteWorkspaceApi } from "../apis/Workspace";
-import { fetchFlowsApi, deleteFlowApi } from "../apis/Flow";
+import { createFolderApi, fetchAllFolderApi, deleteFolderApi } from "../apis/Folder";
+import { fetchAllFormApi, deleteFormApi } from "../apis/Form";
 
-import WorkspaceList from '../components/dashboard/WorkspaceList';
-import FlowGrid from '../components/dashboard/FlowGrid';
-import CreateWorkspaceDialog from '../components/dashboard/CreateWorkspaceDialog';
-import ConfirmationDialog from '../components/dashboard/ConfirmationDialog';
+import FolderButton from '../components/dashboard/FolderButton';
+import FormCard from '../components/dashboard/FormCard';
+import CreateFolderModal from '../components/dashboard/CreateFolderModal';
+import DeleteModal from '../components/dashboard/DeleteModal';
 
-import styles from '../assets/DashboardLayout.module.css';
+import styles from '../assets/Dashboard.module.css';
 
-function DashboardHome() {
+function Dashboard() {
     const token = useAuth();
     const navigate = useNavigate();
 
-    const [userProfile, setUserProfile] = useState({});
-    
-    const [workspaces, setWorkspaces] = useState([]);
-    const [workspaceId, setWorkspaceId] = useState(null);
-    const [workspaceName, setWorkspaceName] = useState('');
-    const [workspaceError, setWorkspaceError] = useState('');
+    const [userData, setUserData] = useState([]);
 
-    const [flows, setFlows] = useState([]);
-    const [flowId, setFlowId] = useState(null);
-    const [itemType, setItemType] = useState(null);
+    const [allFolder, setAllFolder] = useState([]);
+    const [folderId, setFolderId] = useState(null);
+    const [folderName, setFolderName] = useState(null);
+    const [folderNameError, setFolderNameError] = useState(null);
 
-    const [isMenuExpanded, setMenuExpanded] = useState(false);
-    const [showCreateDialog, setShowCreateDialog] = useState(false);
-    const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+    const [allForm, setAllForm] = useState([]);
+    const [formId, setFormId] = useState(null);
+    const [entityType, setEntityType] = useState(null);
 
-    const handleCreateWorkspace = async () => {
-        setWorkspaceError('');
-        if (workspaceName.trim().length === 0) {
-            setWorkspaceError('Workspace name is required');
-            return;
-        }
+    const [isDropdownOpen, setDropdownOpen] = useState(false);
+    const [isCreateModalOpen, setCreateModalOpen] = useState(false);
+    const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
 
-        const response = await createWorkspaceApi(workspaceName, token);
-        if (response) {
-            setShowCreateDialog(false);
-            fetchWorkspaces();
-        }
+    const openCreateModal = () => {
+        setFolderName(''); setFolderNameError('');
+        setCreateModalOpen(true); setDeleteModalOpen(false);
+    };
+
+    const openDeleteModal = (id, type = "folder") => {
+        setEntityType(type); setFormId(null); setFolderId(null);
+        if (type == "form") setFormId(id); else setFolderId(id);
+        setDeleteModalOpen(true); setCreateModalOpen(false);
     };
 
     const userDashboard = async () => {
         const data = await userDashboardApi(token);
-        if (data) { setUserProfile(data); fetchWorkspaces(); fetchFlows(); }
+        if (data) { setUserData(data); fetchAllFolder(); fetchAllForm(); }
     };
 
-    const fetchWorkspaces = async () => {
-        const data = await fetchWorkspacesApi(token);
-        if (data) setWorkspaces(data);
+    const createFolder = async () => {
+        setFolderNameError('');
+        if (folderName.trim().length === 0) { setFolderNameError('Enter folder name'); return; }
+
+        const data = await createFolderApi(folderName, token);
+        if (data) { setCreateModalOpen(false); fetchAllFolder(); }
     };
 
-    const deleteWorkspace = async () => {
-        const data = await deleteWorkspaceApi(workspaceId, token);
-        if (data) { setShowConfirmDialog(false); fetchWorkspaces(); };
+    const fetchAllFolder = async () => {
+        const data = await fetchAllFolderApi(token);
+        if (data) setAllFolder(data);
     };
 
-    const fetchFlows = async () => {
-        const data = await fetchFlowsApi(token);
-        if (data) setFlows(data);
+    const deleteFolder = async () => {
+        const data = await deleteFolderApi(folderId, token);
+        if (data) { setDeleteModalOpen(false); fetchAllFolder(); };
     };
 
-    const deleteFlow = async () => {
-        const data = await deleteFlowApi(flowId, token);
-        if (data) { setShowConfirmDialog(false); fetchFlows(); };
+    const fetchAllForm = async () => {
+        const data = await fetchAllFormApi(token);
+        if (data) setAllForm(data);
+    };
+
+    const deleteForm = async () => {
+        const data = await deleteFormApi(formId, token);
+        if (data) { setDeleteModalOpen(false); fetchAllForm(); };
     };
 
     useEffect(() => {
@@ -75,78 +80,60 @@ function DashboardHome() {
     }, [token]);
 
     return (
-        <div className={styles.dash_Container}>
-            <nav className={styles.top_Nav}>
-                <div className={`${styles.menu_Wrapper} ${isMenuExpanded ? styles.active : ''}`}>
-                    <button 
-                        className={styles.profile_Button}
-                        onClick={() => setMenuExpanded(!isMenuExpanded)}
-                    >
-                        <span>{userProfile.username ? `${userProfile.username}'s Hub` : "My Hub"}</span>
-                        <i className={styles.chevron_Icon} />
+        <main className={styles.dashboard}>
+            <div className={styles.navbar}>
+                <div className={`${styles.dropdown} ${isDropdownOpen ? styles.show : ''}`}>
+                    <button className={styles.dropdownBtn} onClick={() => setDropdownOpen(!isDropdownOpen)}>
+                        <span>{userData.username ? `${userData.username}'s workspace` : "workspace"}</span>
+                        <img className={styles.arrowDown} src="/icons/arrow-angle-down.png" alt="arrow-down icon" />
                     </button>
-                    <div className={styles.menu_Items}>
-                        <Link to="/account">Account</Link>
-                        <Link 
-                            to="/login" 
-                            className={styles.sign_Out}
-                            onClick={() => localStorage.removeItem('authToken')}
-                        >
-                            Sign Out
-                        </Link>
+                    <div className={styles.dropdownContent}>
+                        <Link to="/settings">Settings</Link>
+                        <Link to="/login" onClick={() => localStorage.removeItem('authToken')} className={styles.logout}>Logout</Link>
                     </div>
                 </div>
-            </nav>
-
-            <main className={styles.content_Grid}>
-                <section className={styles.workspaceSection}>
-                    <button 
-                        className={styles.createWorkspace_Btn}
-                        onClick={() => setShowCreateDialog(true)}
-                    >
-                        <i className={styles.folder_Icon} />
-                        <span>New Workspace</span>
+            </div>
+            <div className={styles.section}>
+                <div className={styles.folders}>
+                    <button className={styles.createOpen} onClick={openCreateModal}>
+                        <img src="/icons/folder-create.png" alt="folder icon" />
+                        <span>Create a folder</span>
                     </button>
-                    
-                    <WorkspaceList
-                        workspaces={workspaces}
-                        onDelete={(id) => handleDeleteClick(id, 'workspace')}
+                    <FolderButton
+                        folders={allFolder}
+                        onDelete={(id) => openDeleteModal(id)}
                     />
-                </section>
-
-                <section className={styles.flow_Section}>
-                    <Link to="/builder" className={styles.createFlowCard}>
-                        <i className={styles.plusIcon} />
-                        <span>Create Flow</span>
+                </div>
+                <div className={styles.forms}>
+                    <Link to="/workspace" className={styles.card}>
+                        <img src="/icons/plus.png" alt="plus icon" />
+                        <span>Create a typebot</span>
                     </Link>
-                    
-                    <FlowGrid
-                        flows={flows}
-                        onDelete={(id) => handleDeleteClick(id, 'flow')}
+                    <FormCard
+                        forms={allForm}
+                        onDelete={(id, type) => openDeleteModal(id, type)}
                     />
-                </section>
+                    {isCreateModalOpen &&
+                        <CreateFolderModal
+                            folderName={folderName}
+                            folderNameError={folderNameError}
+                            onNameChange={(e) => setFolderName(e.target.value)}
+                            onCreate={createFolder}
+                            onClose={() => setCreateModalOpen(false)}
+                        />
+                    }
+                    {isDeleteModalOpen &&
+                        <DeleteModal
+                            entityType={entityType}
+                            onDelete={entityType === "folder" ? deleteFolder : deleteForm}
+                            onClose={() => setDeleteModalOpen(false)}
+                        />
+                    }
+                </div>
+            </div>
 
-                {/* Dialogs */}
-                {showCreateDialog && (
-                    <CreateWorkspaceDialog
-                        name={workspaceName}
-                        error={workspaceError}
-                        onChange={(e) => setWorkspaceName(e.target.value)}
-                        onSubmit={handleCreateWorkspace}
-                        onClose={() => setShowCreateDialog(false)}
-                    />
-                )}
-
-                {showConfirmDialog && (
-                    <ConfirmationDialog
-                        itemType={itemType}
-                        onConfirm={itemType === 'workspace' ? deleteWorkspace : deleteFlow}
-                        onClose={() => setShowConfirmDialog(false)}
-                    />
-                )}
-            </main>
-        </div>
-    );
+        </main>
+    )
 }
 
-export default DashboardHome;
+export default Dashboard
