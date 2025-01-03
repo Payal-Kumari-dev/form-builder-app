@@ -1,0 +1,84 @@
+.dash_container {
+    min-height: 100vh;
+    background-color: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+.top_Nav {
+    padding: 1rem 2rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.menu_Wrapper {
+    position: relative;
+    width: fit-content;
+}
+
+.profile_Button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.profile_Button:hover {
+    background: var(--bg-hover);
+}
+
+.chevron_Icon {
+    width: 1rem;
+    height: 1rem;
+    background-image: url('/icons/chevron-down.svg');
+    transition: transform 0.2s ease;
+}
+
+.menu_Wrapper.active .chevron_Icon {
+    transform: rotate(180deg);
+}
+
+.menu_Items {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    margin-top: 0.5rem;
+    overflow: hidden;
+    display: none;
+}
+
+.menu_Wrapper.active .menu_Items {
+    display: block;
+}
+
+.menu_Items a {
+    display: block;
+    padding: 0.75rem 1rem;
+    color: var(--text-primary);
+    text-decoration: none;
+    transition: background 0.2s ease;
+}
+
+.menu_Items a:hover {
+    background: var(--bg-hover);
+}
+
+.sign_Out {
+    color: var(--error-color) !important;
+}
+
+.content_Grid {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 2rem;
+    padding: 2rem;
+}
+
+/* ... Additional styles for workspace and flow sections ... */ 
